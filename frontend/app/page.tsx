@@ -1,155 +1,129 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { AlertBanner } from "@/components/dashboard/AlertBanner";
-import { KPICard } from "@/components/dashboard/KPICard";
-import { AlertTriageTable } from "@/components/dashboard/AlertTriageTable";
-import { PieChart } from "@/components/charts/PieChart";
-import { LineChart } from "@/components/charts/LineChart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, FileWarning, Clock, TrendingUp } from "lucide-react";
-import { mockDashboardSummary, mockActiveAlerts, mockTransactionVolume } from "@/lib/mock-data";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Shield, Users, FileText } from "lucide-react";
 
-export default function DashboardPage() {
-  // In production, these would fetch from the API
-  // For now, we'll use mock data
-  const summary = mockDashboardSummary;
-  const alerts = mockActiveAlerts;
-  const volumeData = mockTransactionVolume;
-
-  const pieChartData = [
-    { name: "Critical", value: summary.alerts_by_risk.critical, color: "#dc2626" },
-    { name: "High", value: summary.alerts_by_risk.high, color: "#f97316" },
-    { name: "Medium", value: summary.alerts_by_risk.medium, color: "#eab308" },
-    { name: "Low", value: summary.alerts_by_risk.low, color: "#22c55e" },
-  ];
+export default function RoleSelectorPage() {
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">JB</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Julius Baer: Agentic AI AML Platform
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Real-time Monitoring & Document Corroboration
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="p-2 hover:bg-gray-100 rounded-lg">
-                <svg
-                  className="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-              </button>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-medium text-sm">AR</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">Ana Rodriguez</p>
-                  <p className="text-xs text-gray-600">Compliance Officer</p>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-6">
+      <div className="max-w-4xl w-full">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-3xl">JB</span>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Critical Alert Banner */}
-        <AlertBanner />
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <KPICard
-            title="Total Active Alerts"
-            value={summary.total_active_alerts}
-            subtitle="Across all priority levels"
-            icon={AlertTriangle}
-            iconColor="text-blue-600"
-          />
-          <KPICard
-            title="Critical Alerts"
-            value={summary.critical_alerts}
-            subtitle="Require immediate action"
-            icon={FileWarning}
-            iconColor="text-red-600"
-          />
-          <KPICard
-            title="Pending Cases"
-            value={summary.pending_cases}
-            subtitle="Awaiting investigation"
-            icon={Clock}
-            iconColor="text-yellow-600"
-          />
-          <KPICard
-            title="Avg. Resolution Time"
-            value={`${summary.avg_resolution_time} hours`}
-            subtitle="↓ 12% from last month"
-            icon={TrendingUp}
-            iconColor="text-green-600"
-            trend={{
-              value: summary.resolution_time_change,
-              isPositive: true,
-            }}
-          />
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Julius Baer
+          </h1>
+          <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+            KYC Document Verification Platform
+          </h2>
+          <p className="text-gray-600">
+            Select your role to continue
+          </p>
         </div>
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Alerts by Risk Level */}
-          <Card>
+        {/* Role Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Compliance Officer Card */}
+          <Card className="hover:shadow-xl transition-shadow cursor-pointer border-2 hover:border-blue-500">
             <CardHeader>
-              <CardTitle className="text-lg">Alerts by Risk Level</CardTitle>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-blue-600" />
+              </div>
+              <CardTitle className="text-2xl">Compliance Officer</CardTitle>
+              <CardDescription className="text-base">
+                Review KYC documents, assess risk scores, and manage compliance workflows
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <PieChart data={pieChartData} />
+              <ul className="space-y-2 mb-6 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                  Review red flags and critical alerts
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                  Assess risk scores and breakdowns
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                  Verify source of wealth
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                  Approve or reject KYC applications
+                </li>
+              </ul>
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                size="lg"
+                onClick={() => router.push("/compliance")}
+              >
+                Enter Compliance Dashboard
+              </Button>
             </CardContent>
           </Card>
 
-          {/* Transaction Volume Trend */}
-          <Card>
+          {/* Relationship Manager Card */}
+          <Card className="hover:shadow-xl transition-shadow cursor-pointer border-2 hover:border-green-500">
             <CardHeader>
-              <CardTitle className="text-lg">Transaction Volume Trend</CardTitle>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl">Relationship Manager</CardTitle>
+              <CardDescription className="text-base">
+                Manage client profiles, upload documents, and monitor alerts
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <LineChart data={volumeData} />
+              <ul className="space-y-2 mb-6 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                  View client demographic profiles
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                  Upload client documents (PDF, JPG, PNG)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                  Monitor fraud alerts for clients
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                  Track risk scorecards
+                </li>
+              </ul>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="lg"
+                onClick={() => router.push("/rm")}
+              >
+                Enter RM Dashboard
+              </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Active Alert Triage Queue */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Active Alert Triage Queue</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              All alerts requiring compliance officer review
-            </p>
-          </CardHeader>
-          <CardContent>
-            <AlertTriageTable alerts={alerts} />
-          </CardContent>
-        </Card>
-      </main>
+        {/* Footer Note */}
+        <div className="mt-8 text-center">
+          <Card className="bg-gray-50 border-gray-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                <FileText className="h-4 w-4" />
+                <span>
+                  This platform focuses on document verification, risk assessment, and compliance workflows
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

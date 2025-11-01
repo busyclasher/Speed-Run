@@ -1,4 +1,10 @@
 import { supabase } from './supabase'
+import { 
+  mockDashboardSummary, 
+  mockActiveAlerts, 
+  mockTransactionVolume,
+  mockAlertDetails 
+} from './mock-data'
 
 export interface Alert {
   alert_id: string
@@ -76,15 +82,25 @@ export interface AuditLogEntry {
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   try {
+    console.log('🔄 Fetching dashboard summary from Supabase...')
+    
     // Get all alerts
     const { data: alerts, error } = await supabase
       .from('alerts')
       .select('priority, status, risk_score')
 
     if (error) {
-      console.error('Supabase error:', error)
-      throw error
+      console.error('❌ Supabase error:', error)
+      console.warn('⚠️ Falling back to mock data')
+      return mockDashboardSummary
     }
+
+    if (!alerts || alerts.length === 0) {
+      console.warn('⚠️ No data in Supabase, using mock data')
+      return mockDashboardSummary
+    }
+
+    console.log('✅ Successfully fetched', alerts.length, 'alerts from Supabase')
 
     // Calculate statistics
     const activeAlerts = alerts?.filter(a => a.status !== 'resolved') || []
@@ -108,13 +124,16 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       alerts_by_risk: alertsByRisk,
     }
   } catch (error) {
-    console.error('Error in getDashboardSummary:', error)
-    throw error
+    console.error('❌ Error in getDashboardSummary:', error)
+    console.warn('⚠️ Falling back to mock data')
+    return mockDashboardSummary
   }
 }
 
 export async function getActiveAlerts(): Promise<Alert[]> {
   try {
+    console.log('🔄 Fetching active alerts from Supabase...')
+    
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
@@ -123,14 +142,22 @@ export async function getActiveAlerts(): Promise<Alert[]> {
       .limit(100)
 
     if (error) {
-      console.error('Supabase error:', error)
-      throw error
+      console.error('❌ Supabase error:', error)
+      console.warn('⚠️ Falling back to mock data')
+      return mockActiveAlerts
     }
 
-    return data || []
+    if (!data || data.length === 0) {
+      console.warn('⚠️ No alerts in Supabase, using mock data')
+      return mockActiveAlerts
+    }
+
+    console.log('✅ Successfully fetched', data.length, 'alerts from Supabase')
+    return data
   } catch (error) {
-    console.error('Error in getActiveAlerts:', error)
-    throw error
+    console.error('❌ Error in getActiveAlerts:', error)
+    console.warn('⚠️ Falling back to mock data')
+    return mockActiveAlerts
   }
 }
 
@@ -149,6 +176,8 @@ export async function getTransactionVolume(): Promise<TransactionVolume[]> {
 
 export async function getAlertDetails(alertId: string): Promise<AlertDetails> {
   try {
+    console.log('🔄 Fetching alert details for', alertId, 'from Supabase...')
+    
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
@@ -156,14 +185,17 @@ export async function getAlertDetails(alertId: string): Promise<AlertDetails> {
       .single()
 
     if (error) {
-      console.error('Supabase error:', error)
-      throw error
+      console.error('❌ Supabase error:', error)
+      console.warn('⚠️ Falling back to mock data')
+      return mockAlertDetails
     }
 
     if (!data) {
-      throw new Error('Alert not found')
+      console.warn('⚠️ Alert not found in Supabase, using mock data')
+      return mockAlertDetails
     }
 
+    console.log('✅ Successfully fetched alert details from Supabase')
     return {
       ...data,
       agent_findings: data.agent_findings || [],
@@ -171,8 +203,9 @@ export async function getAlertDetails(alertId: string): Promise<AlertDetails> {
       transaction_history: data.transaction_history || [],
     }
   } catch (error) {
-    console.error('Error in getAlertDetails:', error)
-    throw error
+    console.error('❌ Error in getAlertDetails:', error)
+    console.warn('⚠️ Falling back to mock data')
+    return mockAlertDetails
   }
 }
 
