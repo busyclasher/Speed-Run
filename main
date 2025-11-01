@@ -1,0 +1,255 @@
+from datetime import datetime
+import pandas as pd
+import json
+
+pd.set_option('display.max_columns', None)
+
+raw_transaction_data = pd.read_csv(r"C:\Users\kinso\Documents\Speedrun Hackathon\transactions_mock_1000_for_participants.csv")
+print(raw_transaction_data.head(20))
+
+# input()
+
+print(raw_transaction_data.info())
+
+print(raw_transaction_data.dtypes)
+
+cols = raw_transaction_data.columns
+
+print(cols)
+
+print(len(raw_transaction_data))
+print(raw_transaction_data.count())
+
+print("\n")
+
+print(raw_transaction_data.nunique())
+# data_dict = {}
+# for col in cols:
+#     data_dict[col] = raw_transaction_data[col].unique().tolist()
+#     # print(f"Col: {col}, Unique Data: {raw_transaction_data[col].unique()}")
+
+# print(data_dict)
+
+# json_output_path = r"C:\Users\kinso\Documents\Speedrun Hackathon\unique_values.json"
+# with open(json_output_path, 'w') as f:
+#     # Use json.dump for clean, readable output with indentation
+#     json.dump(data_dict, f, indent=4) 
+
+# print(f"Successfully exported unique values to: {json_output_path}")
+
+# raw_transaction_data_copy = raw_transaction_data.copy()
+
+# if raw_transaction_data_copy["booking_jurisdiction"] == "HK":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 0
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "SG":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 1
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "CH":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 2
+# else:
+#     raw_transaction_data_copy["booking_jurisdiction"] = 3
+
+# if raw_transaction_data_copy["regulator"] == "HKMA/SFC":
+#     raw_transaction_data_copy["regulator"] = 0
+# elif raw_transaction_data_copy["regulator"] == "MAS":
+#     raw_transaction_data_copy["regulator"] = 1
+# elif raw_transaction_data_copy["regulator"] == "FINMA":
+#     raw_transaction_data_copy["regulator"] = 2
+# else:
+#     raw_transaction_data_copy["regulator"] = 3
+
+# if raw_transaction_data_copy["booking_jurisdiction"] == "HK":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 0
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "SG":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 1
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "CH":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 2
+# else:
+#     raw_transaction_data_copy["booking_jurisdiction"] = 3
+
+# # Amount
+# # if raw_transaction_data_copy["regulator"] == "HKMA/SFC":
+# #     raw_transaction_data_copy["regulator"] = 0
+# # elif raw_transaction_data_copy["regulator"] == "MAS":
+# #     raw_transaction_data_copy["regulator"] = 1
+# # elif raw_transaction_data_copy["regulator"] == "FINMA":
+# #     raw_transaction_data_copy["regulator"] = 2
+# # else:
+# #     raw_transaction_data_copy["regulator"] = 3
+
+# if raw_transaction_data_copy["booking_jurisdiction"] == "HK":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 0
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "SG":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 1
+# elif raw_transaction_data_copy["booking_jurisdiction"] == "CH":
+#     raw_transaction_data_copy["booking_jurisdiction"] = 2
+# else:
+#     raw_transaction_data_copy["booking_jurisdiction"] = 3
+
+# if raw_transaction_data_copy["regulator"] == "HKMA/SFC":
+#     raw_transaction_data_copy["regulator"] = 0
+# elif raw_transaction_data_copy["regulator"] == "MAS":
+#     raw_transaction_data_copy["regulator"] = 1
+# elif raw_transaction_data_copy["regulator"] == "FINMA":
+#     raw_transaction_data_copy["regulator"] = 2
+# else:
+#     raw_transaction_data_copy["regulator"] = 3
+
+
+import pandas as pd
+import numpy as np
+
+# 1. Define the complete encoding maps based on unique values analysis:
+encoding_maps = {
+    "suspicion_determined_datetime": {np.nan: 0, "Non-NaN": 1},
+    "str_filed_datetime": {np.nan: 0, "Non-NaN": 1},
+    "swift_f70_purpose": {np.nan: 0, "Non-NaN": 1},
+
+    # BIC Code Encoding (Label Encoding with NaN=0)
+    "ordering_institution_bic": {
+        np.nan: 0, 'AGVRBFZB': 1, 'ANFYRGQK': 2, 'ARLRCCNH': 3, 'AZLCSAJZ': 4, 
+        'BHMKGMJM': 5, 'BJADYBKU': 6, 'BMAJRBRC': 7, 'BMGUYPDS': 8, 'BNBTQLIY': 9, 
+        'BQKEWBYB': 10, 'BRJQAFOZ': 11, 'BVWTRJIR': 12, 'BWOYYTBG': 13, 'BXUPWFAJ': 14, 
+        'CAYWHZVA': 15, 'CFNAMRFP': 16, 'CHVLKQBJ': 17, 'CMHQETJD': 18, 'CPDKKXUX': 19, 
+        'CPVDXEOE': 20, 'CUUSRWOA': 21, 'DFFCFLXS': 22, 'DIAOIBCN': 23, 'DMENRSLI': 24, 
+        'DOFPNFJG': 25, 'DQFUQNQO': 26, 'DZDYKZJA': 27, 'DZUDVUMW': 28, 'EFASXVQF': 29, 
+        'ELDSIGGG': 30, 'EMIYQWFT': 31, 'EOVANYWJ': 32, 'EPQNJMEJ': 33, 'ETUDGKZO': 34, 
+        'EUTUIMOG': 35, 'EWUCXLHZ': 36, 'FCVSFVKA': 37, 'FDBNIUCO': 38, 'FFEUMTHC': 39, 
+        'FHSWEAAX': 40, 'FILBRWHG': 41, 'FNGFFYFU': 42, 'FOQELGJP': 43, 'FPLQBQHF': 44, 
+        'FYYETJCD': 45, 'GEWLBQWG': 46, 'GEWQIBJW': 47, 'GGTRFFMO': 48, 'GIWIYSTX': 49, 
+        'HAOAWUWE': 50, 'HAVWPRGG': 51, 'HBRXQOJQ': 52, 'HDFMFFLP': 53, 'HKCPSLES': 54, 
+        'HTKXFQZR': 55, 'HTRYABPP': 56, 'HWKOFABR': 57, 'IABURJVK': 58, 'IBACVVWL': 59, 
+        'IEJVDNDD': 60, 'IGXCIXOH': 61, 'IHWGLMEC': 62, 'IOYSRWZS': 63, 'IWDOJPBA': 64, 
+        'IXBPXBOC': 65, 'IYOFBXQV': 66, 'IZXPNUUO': 67, 'JCXWJMKA': 68, 'JEAFSNNQ': 69, 
+        'JFYUPFZC': 70, 'JGXLYIXB': 71, 'JLWMHUXD': 72, 'JRWTKBTY': 73, 'JVIYCXFO': 74, 
+        'JVYGZVHK': 75, 'JWVXJLLL': 76, 'JZAFWXHQ': 77, 'KDNAGERA': 78, 'KFODZMXE': 79, 
+        'KIAGOPGV': 80, 'KNEXGJKK': 81, 'KXGQPCEA': 82, 'LEIAXMNL': 83, 'LETJXYIB': 84, 
+        'LHDPDXWK': 85, 'LIKELQBU': 86, 'LLOQRQYV': 87, 'LLSYILXK': 88, 'LVLJBISO': 89, 
+        'LXNRFIYW': 90, 'LYXIUZVD': 91, 'MPVUVUCA': 92, 'MTHZNATH': 93, 'MWKRYZAA': 94, 
+        'NDJTYPVV': 95, 'NDRPYMDV': 96, 'NGWLFENY': 97, 'NLIQKDOA': 98, 'NSGKHTHG': 99, 
+        'NWRZNYVL': 100, 'OHBUXACJ': 101, 'OKUWAQCC': 102, 'ONQVJFCT': 103, 'PBPHRPJV': 104, 
+        'PBTVWATN': 105, 'PETFPWML': 106, 'PEYHRTCU': 107, 'PEYNAGIS': 108, 'PQRUMSDC': 109, 
+        'PVIOJCIV': 110, 'PWLJCGRU': 111, 'QBRYWPXW': 112, 'QEYSLLUD': 113, 'QKZHAUQX': 114, 
+        'QSNMQZOP': 115, 'QTGVMEDQ': 116, 'QVCUDUGV': 117, 'QVIQUKAN': 118, 'RLWYITZP': 119, 
+        'RRUPUVQJ': 120, 'RTZUMARC': 121, 'RVTDORFZ': 122, 'STETOVCI': 123, 'SUCFWEHO': 124, 
+        'TDVVJMWN': 125, 'TGYXORLP': 126, 'TIWKKKDH': 127, 'TIZLAPLI': 128, 'TMKCJZIG': 129, 
+        'TNZMJHZP': 130, 'TTFRDVXU': 131, 'UGDPDSJE': 132, 'UJAZWDMA': 133, 'URFEVFGS': 134, 
+        'VADZTZIW': 135, 'VMCCAYXI': 136, 'VMCXOWIL': 137, 'VQLZDOEC': 138, 'VTPCVEMX': 139, 
+        'VWWUFEIK': 140, 'VYKAMOXE': 141, 'WANTLUVO': 142, 'WBPZYAHP': 143, 'WFYYRZPJ': 144, 
+        'WMFXZDTY': 145, 'WNKMBMVI': 146, 'WQIWRNAC': 147, 'WSFEYGQN': 148, 'WUCXTGQS': 149, 
+        'WWEHVEBA': 150, 'WWNMAJQL': 151, 'XDTPUWWC': 152, 'XFOARRAP': 153, 'XGMLNTGL': 154, 
+        'XHJWCEVA': 155, 'XHQCMLOD': 156, 'XMHQVEFE': 157, 'XULVAOCR': 158, 'YGDTTJPP': 159, 
+        'YOGSTYKN': 160, 'YUSAHONM': 161, 'ZFSKLHRB': 162, 'ZHYTQRUO': 163, 'ZTNXSXFE': 164, 
+        'ZTSFXFXI': 165
+    },
+    "beneficiary_institution_bic": {
+        np.nan: 0, 'ABUOTMVP': 1, 'AIERKXNB': 2, 'AIFCZDNT': 3, 'ARLWULUNS': 4, 
+        'ASJKCNWN': 5, 'AYNBLKVA': 6, 'BBVHJKEZ': 7, 'BKZSXXPH': 8, 'BOHTAFMR': 9, 
+        'BTXZRLAU': 10, 'BVFRLQNZ': 11, 'BWUANXDU': 12, 'CBVJMKVL': 13, 'CGPXDUFA': 14, 
+        'CGXHEPOX': 15, 'CJLWWPWO': 16, 'CLASHDVX': 17, 'CLIKYSMP': 18, 'CRSCMJPP': 19, 
+        'CUIGGCYF': 20, 'DLCFGUNU': 21, 'DMPUSNYR': 22, 'DRPXDKCD': 23, 'DSIACVJJ': 24, 
+        'DWLZGOHB': 25, 'ELGWNYCQ': 26, 'EMARXPZX': 27, 'EOLDPDSX': 28, 'ERDAYIUC': 29, 
+        'FAFJPGGW': 30, 'FDPONMFI': 31, 'FFKMLWAO': 32, 'FIRANLZY': 33, 'FSVGFRYQ': 34, 
+        'FTOOQAES': 35, 'GCJAYMLA': 36, 'GGLQJANE': 37, 'GMNUKWSY': 38, 'GNCEKVER': 39, 
+        'GRGNLTAU': 40, 'GRUBWMKK': 41, 'GSYEGQRP': 42, 'GTEZNSML': 43, 'GVWBTUUI': 44, 
+        'GYWBWWTM': 45, 'GYXPRCKK': 46, 'HDRXYCZC': 47, 'HGFBRGMM': 48, 'HKCXFLOU': 49, 
+        'HNEOUOHX': 50, 'HQOZNJCV': 51, 'HRIMFBYC': 52, 'HXGKFRLL': 53, 'IBTBQFQK': 54, 
+        'IIBRKNTJ': 55, 'IKLSTGFR': 56, 'IMUNWTGS': 57, 'IPGLWCMX': 58, 'IQIBIZDK': 59, 
+        'ITKVUVKL': 60, 'JAKSUAAJ': 61, 'JFQMVUQW': 62, 'JISZEQJQ': 63, 'JPPLZGER': 64, 
+        'JVXUHNEH': 65, 'JWBUFFYE': 66, 'JYNSHKWG': 67, 'JZMMEPYL': 68, 'KFCRVMTP': 69, 
+        'KORBVEZR': 70, 'KPMEMYMK': 71, 'KQXZPCEN': 72, 'KSHRFPWN': 73, 'KTZIVFJZ': 74, 
+        'LDPCAWMP': 75, 'LJABUFJO': 76, 'LNAGCIGZ': 77, 'LNURBBAN': 78, 'LVCXIIXM': 79, 
+        'MADHHLKW': 80, 'MAKCVUMK': 81, 'MENXUUUQ': 82, 'MFNYRFLL': 83, 'MHLDYVLZ': 84, 
+        'MJVPQHVG': 85, 'MKUSBQQJ': 86, 'MRPIEZNL': 87, 'NFLPSODK': 88, 'NMVFGCIM': 89, 
+        'NRPEJSDH': 90, 'NSPRMVJJ': 91, 'NZVSBDGV': 92, 'OKZNFRTZ': 93, 'OLHNYUSE': 94, 
+        'ONQLJSXE': 95, 'OWPBEARE': 96, 'PCBUELAX': 97, 'PERSFHLK': 98, 'PISYKGPD': 99, 
+        'PONZAJPZ': 100, 'PQEEUUKV': 101, 'PQQXZRMN': 102, 'PYEDJVIF': 103, 'PZKFGNRC': 104, 
+        'QDTMQPQO': 105, 'QHIZZBZP': 106, 'QPRXGLQU': 107, 'QRHKNGMO': 108, 'QYHMIIBT': 109, 
+        'RMCNDZQI': 110, 'RNSEQNIM': 111, 'RUWVELZR': 112, 'RWWUTVWW': 113, 'SELRQZIC': 114, 
+        'SFSMKKCI': 115, 'SOAHFXNF': 116, 'SSDZWACS': 117, 'SVMSDYAQ': 118, 'TFFDUWHS': 119, 
+        'TGQBUSGS': 120, 'TMSFEAZY': 121, 'TSYZOLJJ': 122, 'UGPUVZJR': 123, 'URCHFQKM': 124, 
+        'UUDOMIQI': 125, 'UWFMULNW': 126, 'VDXAVMTO': 127, 'VFVLRLEK': 128, 'VIQKVALJ': 129, 
+        'VKFSDCAN': 130, 'VKXVOARS': 131, 'VMOQSINX': 132, 'VSYNQJFJ': 133, 'VXMWLIEZ': 134, 
+        'VZZEHYHK': 135, 'WEDTIHMG': 136, 'WFCLOGGQ': 137, 'WHPTIDXM': 138, 'WHSATQOT': 139, 
+        'WJUQRAVQ': 140, 'WKTLPUQE': 141, 'WXNYUQKX': 142, 'XBOPRDYQ': 143, 'XJUOWKCI': 144, 
+        'XYXUEOMI': 145, 'YATLIDOD': 146, 'YCOTSYFB': 147, 'YEETBUNS': 148, 'YFZADZIC': 149, 
+        'YIPFVRWY': 150, 'YLAHUBQO': 151, 'YNPISFZJ': 152, 'YSHDRNQJ': 153, 'YSIFONZV': 154, 
+        'YWMTXELJ': 155, 'YWUYMVSX': 156, 'YXPAGQZD': 157, 'YYYPWNFC': 158, 'ZARGTWVR': 159, 
+        'ZFGAUIKK': 160, 'ZMGYIYSK': 161, 'ZNHQROUR': 162, 'ZNKVLDWV': 163, 'ZPHCDBPB': 164, 
+        'ZZAPCYVI': 165
+    },
+
+    "booking_jurisdiction": {"HK": 0, "SG": 1, "CH": 2},
+    "regulator": {"HKMA/SFC": 0, "MAS": 1, "FINMA": 2},
+    "currency": {"HKD": 0, "GBP": 1, "CHF": 2, "CNY": 3, "JPY": 4, "USD": 5, "SGD": 6, "EUR": 7},
+    "channel": {"RTGS": 0, "SWIFT": 1, "FAST (SG)": 2, "SEPA": 3, "Cash": 4, "FPS (HK)": 5, "Cheque": 6},
+    "product_type": {"fx_conversion": 0, "wire_transfer": 1, "fund_subscription": 2, "securities_trade": 3, "cash_deposit": 4, "cash_withdrawal": 5},
+    
+    # Boolean/Indicator mappings (True/False or True/False/NaN)
+    "fx_indicator": {False: 0, True: 1}, 
+    "swift_f50_present": {True: 1, False: 0},
+    "swift_f59_present": {True: 1, False: 0},
+    "customer_is_pep": {False: 0, True: 1},
+    "edd_required": {False: 0, True: 1},
+    "edd_performed": {True: 1, False: 0},
+    "sow_documented": {True: 1, False: 0},
+    "is_advised": {False: 0, True: 1},
+    "product_complex": {False: 0, True: 1},
+    "suitability_assessed": {True: 1, False: 0},
+    "product_has_va_exposure": {False: 0, True: 1},
+    "va_disclosure_provided": {True: 1, False: 0},
+    "travel_rule_complete": {True: 1, False: 0},
+    "cash_id_verified": {True: 1, False: 0},
+    
+    # Mappings including NaN/None
+    "fx_base_ccy": {np.nan: 0, "CNY": 1, "EUR": 2, "SGD": 3, "USD": 4, "HKD": 5, "CHF": 6, "GBP": 7, "JPY": 8},
+    "fx_quote_ccy": {np.nan: 0, "JPY": 1, "SGD": 2, "CHF": 3, "HKD": 4, "USD": 5, "GBP": 6, "EUR": 7, "CNY": 8},
+    "swift_mt": {np.nan: 0, "MT202COV": 1, "MT103": 2},
+    "swift_f71_charges": {np.nan: 0, "BEN": 1, "OUR": 2, "SHA": 3},
+
+    # Other categorical mappings
+    "originator_country": {"AE": 0, "TH": 1, "VN": 2, "AU": 3, "HK": 4, "US": 5, "IR": 6, "RU": 7, "CN": 8, "GB": 9, "JP": 10, "SG": 11, "DE": 12, "CH": 13, "FR": 14, "ID": 15},
+    "beneficiary_country": {"CN": 0, "CH": 1, "US": 2, "DE": 3, "TH": 4, "JP": 5, "RU": 6, "VN": 7, "AU": 8, "IR": 9, "FR": 10, "GB": 11, "HK": 12, "ID": 13, "AE": 14, "SG": 15},
+    "customer_type": {"corporate": 0, "domiciliary_company": 1, "individual": 2},
+    "customer_risk_rating": {"Low": 0, "Medium": 1, "High": 2},
+    "purpose_code": {"SAL": 0, "EDU": 1, "INV": 2, "TAX": 3, "LEA": 4, "MED": 5, "GDS": 6, "SVC": 7, "FAM": 8},
+    "client_risk_profile": {"Low": 0, "High": 1, "Balanced": 2},
+    "suitability_result": {"match": 0, "mismatch": 1},
+    "sanctions_screening": {"potential": 0, "none": 1}
+}
+
+# 2. Transformation Logic:
+
+# Assuming your raw data is loaded into a DataFrame named 'df_raw'
+# For the purpose of demonstration, we use 'df_raw' as the starting point.
+df_transformed = raw_transaction_data.copy()
+
+# Iterate over all categorical fields and apply the conversion
+for field, mapping in encoding_maps.items():
+    if field in df_transformed.columns:
+        # Apply the mapping to convert categorical values (text, boolean, NaN) to numbers
+        # .map() replaces values based on the dictionary. Unmatched values (if any)
+        # will become NaN, and the .astype('Int64') converts the column to a nullable integer.
+        df_transformed[field] = df_transformed[field].map(mapping).astype('Int64')
+
+# Columns not included in the mapping (e.g., amount, dates, IDs, narratives)
+# remain untouched.
+
+# 3. Output (Demonstration on Sample Data):
+# This transformed sample data is available for download: 
+# file_link: transformed_transaction_sample.csv
+
+df_transformed = df_transformed.fillna(1)
+
+
+cols_to_drop = ["booking_datetime", "value_date", "originator_name", "originator_account", "beneficiary_name", "beneficiary_account", 
+                "fx_applied_rate", "fx_market_rate", "fx_counterparty", "customer_id", "kyc_last_completed", "kyc_due_date", "narrative",
+                ]
+df_transformed = df_transformed.drop(cols_to_drop, axis=1)
+
+print(df_transformed.info())
+
+print(df_transformed.head(20))
+
+print(min(df_transformed["daily_cash_total_customer"]), max(df_transformed["daily_cash_total_customer"]))
+
+print(min(df_transformed["amount"]), max(df_transformed["amount"]))
