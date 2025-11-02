@@ -18,6 +18,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import TransactionHistory from "./TransactionHistory";
 import AdverseMediaFeed from "./AdverseMediaFeed";
 import ComplianceStatus from "./ComplianceStatus";
+import SmartRecommendations from "./SmartRecommendations";
+import { generateRecommendations } from "@/lib/recommendation-engine";
 
 const portfolioData = [
   { name: "Stocks", value: 400000, color: "#1E40AF" },
@@ -49,10 +51,18 @@ export default function ClientPortfolioDetail({ client }: { client: any }) {
     }
   };
 
+  // Generate recommendations for this client
+  const recommendations = generateRecommendations(client);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Left Column */}
-      <div className="space-y-6">
+    <div className="space-y-6">
+      {/* Smart Recommendations - Top Priority */}
+      <SmartRecommendations recommendations={recommendations} />
+      
+      {/* Client Details Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -105,6 +115,7 @@ export default function ClientPortfolioDetail({ client }: { client: any }) {
           </CardContent>
         </Card>
         <ComplianceStatus status={client.complianceStatus} />
+      </div>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import {
 import { ArrowLeft, Users, AlertTriangle, FileText, Upload, Search } from "lucide-react";
 import { mockClients } from "@/lib/mock-data";
 import LeadTimeRecommendation from "@/components/rm/LeadTimeRecommendation";
+import PriorityClientsWidget from "@/components/rm/PriorityClientsWidget";
 
 export default function RMDashboard() {
   const router = useRouter();
@@ -168,6 +169,11 @@ export default function RMDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Priority Clients Widget */}
+        <div className="mb-6">
+          <PriorityClientsWidget clients={mockClients} />
         </div>
 
         {/* Lead Time Recommendation Section */}
