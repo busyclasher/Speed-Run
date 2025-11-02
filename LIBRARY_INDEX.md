@@ -136,6 +136,7 @@ Located in: `/docs/guides/`
 | Document | Purpose | Time |
 |----------|---------|------|
 | [API_INTEGRATION_GUIDE.md](./docs/guides/API_INTEGRATION_GUIDE.md) | How to integrate with the API | 20 min |
+| [CI_CD_GUIDE.md](./docs/guides/CI_CD_GUIDE.md) | CI/CD setup, pre-commit hooks, GitHub Actions | 30 min |
 | [CONFIGURATION_MANAGEMENT_COMPLETE.md](./docs/guides/CONFIGURATION_MANAGEMENT_COMPLETE.md) | Environment setup & config | 15 min |
 | [IMAGE_ANALYSIS_COMPARISON.md](./docs/guides/IMAGE_ANALYSIS_COMPARISON.md) | Image analysis features | 10 min |
 
