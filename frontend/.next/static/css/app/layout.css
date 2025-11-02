@@ -524,6 +524,28 @@ video {
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
   * {
   border-color: hsl(var(--border));
 }
@@ -699,6 +721,9 @@ video {
 }
 .mt-8 {
   margin-top: 2rem;
+}
+.inline-block {
+  display: inline-block;
 }
 .flex {
   display: flex;
@@ -1023,9 +1048,6 @@ video {
 .rounded {
   border-radius: 0.25rem;
 }
-.rounded-2xl {
-  border-radius: 1rem;
-}
 .rounded-full {
   border-radius: 9999px;
 }
@@ -1037,6 +1059,9 @@ video {
 }
 .rounded-sm {
   border-radius: calc(var(--radius) - 4px);
+}
+.rounded-xl {
+  border-radius: 0.75rem;
 }
 .rounded-b-lg {
   border-bottom-right-radius: var(--radius);
@@ -1299,6 +1324,10 @@ video {
 .to-gray-100 {
   --tw-gradient-to: #f3f4f6 var(--tw-gradient-to-position);
 }
+.object-contain {
+  -o-object-fit: contain;
+     object-fit: contain;
+}
 .p-0 {
   padding: 0px;
 }
@@ -1429,10 +1458,6 @@ video {
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;
-}
-.text-4xl {
-  font-size: 2.25rem;
-  line-height: 2.5rem;
 }
 .text-6xl {
   font-size: 3.75rem;
@@ -1997,6 +2022,16 @@ video {
 
 .dark\:bg-input\/30:is(.dark *) {
   background-color: hsl(var(--input) / 0.3);
+}
+
+.dark\:text-gray-400:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+
+.dark\:text-white:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
 .dark\:hover\:bg-input\/50:hover:is(.dark *) {
