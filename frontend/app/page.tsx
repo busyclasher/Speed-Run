@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 import { Shield, Users, FileText } from "lucide-react";
 
 export default function RoleSelectorPage() {
@@ -13,12 +14,9 @@ export default function RoleSelectorPage() {
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-3xl">JB</span>
+          <div className="flex justify-center mb-4">
+            <Logo variant="icon" size="lg" linkToHome={false} />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Julius Baer
-          </h1>
           <h2 className="text-2xl font-semibold text-gray-700 mb-2">
             KYC Document Verification Platform
           </h2>
