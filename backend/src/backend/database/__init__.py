@@ -8,21 +8,9 @@ This package contains:
 - Alembic migrations
 """
 
-from .connection import engine, get_db
+from .connection import engine, get_db, init_db, close_db
 from .session import async_session_maker, get_session
 from . import models
-
-
-async def init_db():
-    """Initialize database connections (stub for now)."""
-    # TODO: Add database initialization logic if needed
-    pass
-
-
-async def close_db():
-    """Close database connections (stub for now)."""
-    # TODO: Add database cleanup logic if needed
-    pass
 
 
 __all__ = [

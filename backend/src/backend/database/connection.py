@@ -11,7 +11,7 @@ import logging
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from sqlalchemy.pool import NullPool, QueuePool
+from sqlalchemy.pool import NullPool
 
 from ..config import settings
 
@@ -34,14 +34,14 @@ def create_engine() -> AsyncEngine:
     Returns:
         AsyncEngine: Configured async engine
     """
-    # Determine pool class
+    # Configure pool settings
     if settings.TESTING:
         # Use NullPool for testing (no connection reuse)
-        pool_class = NullPool
-        pool_kwargs = {}
+        pool_kwargs = {
+            "poolclass": NullPool,
+        }
     else:
-        # Use QueuePool for production (connection pooling)
-        pool_class = QueuePool
+        # Let SQLAlchemy use default async pool with custom settings
         pool_kwargs = {
             "pool_size": settings.DB_POOL_SIZE,
             "max_overflow": settings.DB_MAX_OVERFLOW,
@@ -54,7 +54,6 @@ def create_engine() -> AsyncEngine:
         settings.DATABASE_URL,
         echo=settings.DB_ECHO,
         future=True,
-        poolclass=pool_class,
         **pool_kwargs,
     )
 

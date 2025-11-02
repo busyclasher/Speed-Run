@@ -13,7 +13,7 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from .connection import engine
+from . import connection
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +28,11 @@ def create_session_factory() -> async_sessionmaker[AsyncSession]:
     Returns:
         async_sessionmaker: Session factory
     """
-    if engine is None:
+    if connection.engine is None:
         raise RuntimeError("Database engine not initialized. Call init_db() first.")
 
     factory = async_sessionmaker(
-        engine,
+        connection.engine,
         class_=AsyncSession,
         expire_on_commit=False,  # Don't expire objects after commit
         autocommit=False,
@@ -108,7 +108,7 @@ def init_session_factory():
     """Initialize session factory if engine is available."""
     global async_session_maker
 
-    if engine is not None and async_session_maker is None:
+    if connection.engine is not None and async_session_maker is None:
         async_session_maker = create_session_factory()
 
 
