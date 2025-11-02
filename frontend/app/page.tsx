@@ -14,8 +14,8 @@ export default function RoleSelectorPage() {
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <Logo variant="icon" size="lg" linkToHome={false} />
+          <div className="flex justify-center mb-6">
+            <Logo variant="full" size="xl" linkToHome={false} />
           </div>
           <h2 className="text-2xl font-semibold text-gray-700 mb-2">
             KYC Document Verification Platform
