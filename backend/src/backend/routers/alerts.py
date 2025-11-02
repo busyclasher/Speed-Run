@@ -27,7 +27,7 @@ from backend.schemas.alert import (
     AlertSeverity,
 )
 from backend.services.alert_service import AlertService
-from logging import get_logger
+from backend.logging import get_logger
 
 logger = get_logger(__name__)
 

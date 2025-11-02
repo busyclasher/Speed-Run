@@ -61,7 +61,7 @@ class CorroborationService:
         """
         # Get dependencies from container if not provided
         if not all([document_parser, nlp_processor, image_processor]):
-            from container import get_container
+            from backend.container import get_container
 
             container = get_container()
             document_parser = document_parser or container.document_parser
@@ -93,7 +93,7 @@ class CorroborationService:
         self.risk_scorer = risk_scorer or RiskScorer()
         self.report_generator = report_generator or ReportGenerator()
 
-        logger.info("corroboration_service_initialized", dependency_injection=True)
+        logger.info("✨ Corroboration service initialized with dependency injection")
 
     async def analyze_document(
         self,
@@ -136,15 +136,15 @@ class CorroborationService:
             if is_document:
                 engines_used.append("document_parser")
                 # Parse document using injected document parser
-                logger.info("parsing_document", file_name=filename)
+                logger.info(f"📄 Parsing document: {filename}")
                 parsed_doc = await self.document_parser.parse(tmp_path)
                 text_content = parsed_doc.text
-                logger.info("document_parsed", text_length=len(text_content))
+                logger.info(f"✅ Document parsed successfully ({len(text_content)} characters extracted)")
 
             # 1. Image Analysis (for images or documents with images)
             if is_image and request.perform_image_analysis:
                 engines_used.extend(["metadata_analyzer", "ai_detector", "tampering_detector"])
-                logger.info("performing_forensic_analysis", file_name=filename)
+                logger.info(f"🔍 Performing forensic image analysis on: {filename}")
                 # Use new forensic analysis service (orchestrates all image analysis)
                 forensic_result = await self.forensic_analyzer.analyze(
                     tmp_path,
@@ -165,10 +165,11 @@ class CorroborationService:
                     metadata_issues=forensic_result.metadata_analysis.issues,
                     forensic_findings=forensic_result.tampering_detection.issues,
                 )
+                auth_status = "✅ Authentic" if image_analysis.is_authentic else "⚠️  Not Authentic"
+                ai_status = "🤖 AI-Generated" if image_analysis.is_ai_generated else "✅ Human-Made"
+                tamper_status = "⚠️  Tampered" if image_analysis.is_tampered else "✅ No Tampering"
                 logger.info(
-                    "forensic_analysis_completed",
-                    is_authentic=image_analysis.is_authentic,
-                    is_ai_generated=image_analysis.is_ai_generated,
+                    f"🔬 Forensic analysis complete: {auth_status}, {ai_status}, {tamper_status}"
                 )
 
             # 2. Format Validation (for documents)

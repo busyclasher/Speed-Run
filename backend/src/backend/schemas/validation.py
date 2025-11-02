@@ -1,9 +1,12 @@
 """Document and image validation schemas."""
 
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from backend.schemas.image_analysis import CompressionProfile
 
 
 class ValidationSeverity(str, Enum):
@@ -79,6 +82,14 @@ class ImageAnalysisResult(BaseModel):
     forensic_findings: List[ValidationIssue] = Field(
         default=[],
         description="Forensic analysis findings"
+    )
+    compression_profiles: List[Any] = Field(
+        default=[],
+        description="Detected compression profiles (e.g., WhatsApp, Instagram)"
+    )
+    ela_variance: Optional[float] = Field(
+        None,
+        description="ELA variance for compression profiling"
     )
 
 

@@ -7,6 +7,7 @@ Single Responsibility: Orchestrate all image analysis services and provide compr
 import asyncio
 from pathlib import Path
 from typing import List, Optional
+from PIL import Image
 
 from backend.adapters.image import ImageProcessorProtocol
 from backend.schemas.image_analysis import (
@@ -14,6 +15,7 @@ from backend.schemas.image_analysis import (
     MetadataAnalysisResult,
     AIDetectionResult,
     TamperingDetectionResult,
+    CompressionProfile,
 )
 from backend.schemas.validation import ValidationIssue
 from backend.cache.decorators import cache_by_file_hash, CacheConfig
@@ -22,6 +24,7 @@ from backend.logging import get_logger
 from .metadata_analyzer import MetadataAnalysisService
 from .ai_detector import AIDetectionService
 from .tampering_detector import TamperingDetectionService
+from .compression_profiler import CompressionProfileService
 
 logger = get_logger(__name__)
 
@@ -52,6 +55,7 @@ class ForensicAnalysisService:
         metadata_analyzer: Optional[MetadataAnalysisService] = None,
         ai_detector: Optional[AIDetectionService] = None,
         tampering_detector: Optional[TamperingDetectionService] = None,
+        compression_profiler: Optional[CompressionProfileService] = None,
     ):
         """
         Initialize forensic analysis service.
@@ -61,6 +65,7 @@ class ForensicAnalysisService:
             metadata_analyzer: Metadata analysis service (injected, optional)
             ai_detector: AI detection service (injected, optional)
             tampering_detector: Tampering detection service (injected, optional)
+            compression_profiler: Compression profile service (injected, optional)
         """
         self.image_processor = image_processor
 
@@ -68,6 +73,7 @@ class ForensicAnalysisService:
         self.metadata_analyzer = metadata_analyzer or MetadataAnalysisService(image_processor)
         self.ai_detector = ai_detector or AIDetectionService(image_processor)
         self.tampering_detector = tampering_detector or TamperingDetectionService()
+        self.compression_profiler = compression_profiler or CompressionProfileService()
 
         logger.info("forensic_analysis_service_initialized", has_processor=image_processor is not None)
 
@@ -103,6 +109,33 @@ class ForensicAnalysisService:
             tampering_task,
         )
 
+        # Detect compression profiles if ELA variance is available
+        compression_profiles: List[CompressionProfile] = []
+        if tampering_result.ela_variance is not None:
+            # Get image size
+            try:
+                image = Image.open(file_path)
+                image_size = image.size  # (width, height)
+                image.close()
+
+                # Detect compression profile
+                compression_profiles = await self.compression_profiler.detect_profile(
+                    ela_variance=tampering_result.ela_variance,
+                    image_size=image_size
+                )
+
+                logger.info(
+                    "compression_profiles_detected",
+                    file_name=file_path.name,
+                    profiles=[p.profile for p in compression_profiles]
+                )
+            except Exception as e:
+                logger.warning(
+                    "compression_profile_detection_failed",
+                    file_name=file_path.name,
+                    error=str(e)
+                )
+
         # Perform reverse image search if requested
         reverse_image_matches = 0
         if perform_reverse_search:
@@ -135,6 +168,7 @@ class ForensicAnalysisService:
             metadata_analysis=metadata_result,
             ai_detection=ai_result,
             tampering_detection=tampering_result,
+            compression_profiles=compression_profiles,
             all_issues=all_issues,
             authenticity_score=round(authenticity_score, 3),
         )
@@ -344,6 +378,25 @@ class ForensicAnalysisService:
         results = await asyncio.gather(*tasks)
         metadata_result, ai_result, tampering_result = results
 
+        # Detect compression profiles if tampering check was performed
+        compression_profiles: List[CompressionProfile] = []
+        if check_tampering and tampering_result.ela_variance is not None:
+            try:
+                image = Image.open(file_path)
+                image_size = image.size
+                image.close()
+
+                compression_profiles = await self.compression_profiler.detect_profile(
+                    ela_variance=tampering_result.ela_variance,
+                    image_size=image_size
+                )
+            except Exception as e:
+                logger.warning(
+                    "compression_profile_detection_failed",
+                    file_name=file_path.name,
+                    error=str(e)
+                )
+
         # Reverse search
         reverse_matches = 0
         if perform_reverse_search:
@@ -368,6 +421,7 @@ class ForensicAnalysisService:
             metadata_analysis=metadata_result,
             ai_detection=ai_result,
             tampering_detection=tampering_result,
+            compression_profiles=compression_profiles,
             all_issues=all_issues,
             authenticity_score=round(authenticity_score, 3),
         )

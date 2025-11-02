@@ -36,9 +36,21 @@ class TamperingDetectionResult(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, description="Tampering detection confidence (0-1)")
     ela_performed: bool = Field(description="Whether ELA analysis was performed")
     ela_anomaly_ratio: Optional[float] = Field(None, description="Ratio of anomalous pixels in ELA")
+    ela_variance: Optional[float] = Field(None, description="ELA variance for compression profiling")
     has_cloned_regions: bool = Field(description="Whether cloned regions were detected")
     compression_consistent: bool = Field(description="Whether compression is consistent")
     issues: List[ValidationIssue] = Field(default=[], description="Tampering-related issues")
+
+
+class CompressionProfile(BaseModel):
+    """Detected compression profile (social media platform or camera)."""
+
+    profile: str = Field(description="Profile name (e.g., 'whatsapp_low', 'instagram', 'facebook')")
+    message: str = Field(description="Human-readable description of the profile")
+    confidence: str = Field(description="Confidence level: 'HIGH', 'MEDIUM', or 'LOW'")
+    size_match: bool = Field(description="Whether image size matches typical profile size")
+    ela_range: tuple = Field(description="ELA variance range for this profile")
+    typical_size: tuple = Field(description="Typical image dimensions for this profile")
 
 
 class ForensicAnalysisResult(BaseModel):
@@ -49,6 +61,10 @@ class ForensicAnalysisResult(BaseModel):
     metadata_analysis: MetadataAnalysisResult = Field(description="Metadata analysis results")
     ai_detection: AIDetectionResult = Field(description="AI detection results")
     tampering_detection: TamperingDetectionResult = Field(description="Tampering detection results")
+    compression_profiles: List[CompressionProfile] = Field(
+        default=[],
+        description="Detected compression profiles (e.g., social media platforms)"
+    )
     all_issues: List[ValidationIssue] = Field(default=[], description="All issues from all analyses")
     authenticity_score: float = Field(
         ge=0.0, le=1.0,
@@ -60,5 +76,6 @@ __all__ = [
     "MetadataAnalysisResult",
     "AIDetectionResult",
     "TamperingDetectionResult",
+    "CompressionProfile",
     "ForensicAnalysisResult",
 ]

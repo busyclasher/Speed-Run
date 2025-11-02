@@ -1,10 +1,22 @@
-import { supabase } from './supabase'
-import { 
-  mockDashboardSummary, 
-  mockActiveAlerts, 
-  mockTransactionVolume,
-  mockAlertDetails 
-} from './mock-data'
+// ============================================
+// Backend API Client for FastAPI
+// ============================================
+
+import { logger } from './logger'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION || 'v1'
+const API_BASE = `${BACKEND_URL}/api/${API_VERSION}`
+
+// Log API configuration
+logger.info('API', 'API client initialized', {
+  backendUrl: BACKEND_URL,
+  apiVersion: API_VERSION,
+})
+
+// ============================================
+// Type Definitions
+// ============================================
 
 export interface Alert {
   alert_id: string
@@ -77,92 +89,244 @@ export interface AuditLogEntry {
 }
 
 // ============================================
-// SUPABASE API FUNCTIONS
+// Validation & Corroboration Types (Aligned with Backend)
 // ============================================
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
-  try {
-    console.log('🔄 Fetching dashboard summary from Supabase...')
-    
-    // Get all alerts
-    const { data: alerts, error } = await supabase
-      .from('alerts')
-      .select('priority, status, risk_score')
-
-    if (error) {
-      console.error('❌ Supabase error:', error)
-      console.warn('⚠️ Falling back to mock data')
-      return mockDashboardSummary
-    }
-
-    if (!alerts || alerts.length === 0) {
-      console.warn('⚠️ No data in Supabase, using mock data')
-      return mockDashboardSummary
-    }
-
-    console.log('✅ Successfully fetched', alerts.length, 'alerts from Supabase')
-
-    // Calculate statistics
-    const activeAlerts = alerts?.filter(a => a.status !== 'resolved') || []
-    const totalAlerts = activeAlerts.length
-    const criticalAlerts = activeAlerts.filter(a => a.priority === 'CRITICAL').length
-    const pendingCases = activeAlerts.filter(a => a.status === 'pending').length
-
-    const alertsByRisk = {
-      critical: activeAlerts.filter(a => a.priority === 'CRITICAL').length,
-      high: activeAlerts.filter(a => a.priority === 'HIGH').length,
-      medium: activeAlerts.filter(a => a.priority === 'MEDIUM').length,
-      low: activeAlerts.filter(a => a.priority === 'LOW').length,
-    }
-
-    return {
-      total_active_alerts: totalAlerts,
-      critical_alerts: criticalAlerts,
-      pending_cases: pendingCases,
-      avg_resolution_time: 4.2,
-      resolution_time_change: -12,
-      alerts_by_risk: alertsByRisk,
-    }
-  } catch (error) {
-    console.error('❌ Error in getDashboardSummary:', error)
-    console.warn('⚠️ Falling back to mock data')
-    return mockDashboardSummary
-  }
+export interface ValidationIssue {
+  category: string
+  severity: "low" | "medium" | "high" | "critical"
+  description: string
+  location?: string
+  details?: Record<string, any>
 }
 
-export async function getActiveAlerts(): Promise<Alert[]> {
+export interface FormatValidationResult {
+  has_double_spacing: boolean
+  has_font_inconsistencies: boolean
+  has_indentation_issues: boolean
+  has_spelling_errors: boolean
+  spelling_error_count: number
+  issues: ValidationIssue[]
+  has_formatting_issues: boolean
+  double_spacing_count: number
+  trailing_whitespace_count: number
+  spelling_errors: string[]
+}
+
+export interface StructureValidationResult {
+  is_complete: boolean
+  missing_sections: string[]
+  has_correct_headers: boolean
+  template_match_score: number
+  issues: ValidationIssue[]
+}
+
+export interface ContentValidationResult {
+  has_sensitive_data: boolean
+  quality_score: number
+  readability_score: number
+  word_count: number
+  issues: ValidationIssue[]
+}
+
+export interface CompressionProfile {
+  profile: string
+  message: string
+  confidence: string
+  size_match: boolean
+  ela_range: [number, number]
+  typical_size: [number, number]
+}
+
+export interface ImageAnalysisResult {
+  is_authentic: boolean
+  is_ai_generated: boolean
+  ai_detection_confidence: number
+  is_tampered: boolean
+  tampering_confidence: number
+  reverse_image_matches: number
+  metadata_issues: ValidationIssue[]
+  forensic_findings: ValidationIssue[]
+  compression_profiles?: CompressionProfile[]
+  ela_variance?: number
+}
+
+export interface RiskScore {
+  overall_score: number
+  risk_level: "low" | "medium" | "high" | "critical"
+  confidence: number
+  contributing_factors: Array<{
+    factor: string
+    weight: number
+    score: number
+  }>
+  recommendations: string[]
+}
+
+export interface CorroborationRequest {
+  file: File
+  client_id?: string
+}
+
+export interface CorroborationResponse {
+  document_id: string
+  file_name: string
+  file_type: string
+  analysis_timestamp: string
+
+  // Validation results (separate properties, not "findings")
+  format_validation?: FormatValidationResult
+  structure_validation?: StructureValidationResult
+  content_validation?: ContentValidationResult
+  image_analysis?: ImageAnalysisResult
+
+  // Risk assessment (nested object)
+  risk_score: RiskScore
+
+  // Processing metadata
+  processing_time: number
+  engines_used: string[]
+
+  // Summary
+  total_issues_found: number
+  critical_issues_count: number
+  requires_manual_review: boolean
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+async function fetchFromBackend(endpoint: string, options: RequestInit = {}) {
+  const url = `${API_BASE}${endpoint}`
+  const method = options.method || 'GET'
+
   try {
-    console.log('🔄 Fetching active alerts from Supabase...')
-    
-    const { data, error } = await supabase
-      .from('alerts')
-      .select('*')
-      .neq('status', 'resolved')
-      .order('timestamp', { ascending: false })
-      .limit(100)
+    logger.info('API', `→ ${method} ${endpoint}`)
 
-    if (error) {
-      console.error('❌ Supabase error:', error)
-      console.warn('⚠️ Falling back to mock data')
-      return mockActiveAlerts
+    const startTime = Date.now()
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    })
+
+    const duration = Date.now() - startTime
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMsg = errorData.detail || `API error: ${response.status}`
+      logger.error('API', `← ${method} ${endpoint} → ${response.status} (${duration}ms)`, {
+        status: response.status,
+        error: errorMsg,
+      })
+      throw new Error(errorMsg)
     }
 
-    if (!data || data.length === 0) {
-      console.warn('⚠️ No alerts in Supabase, using mock data')
-      return mockActiveAlerts
-    }
-
-    console.log('✅ Successfully fetched', data.length, 'alerts from Supabase')
+    const data = await response.json()
+    logger.info('API', `← ${method} ${endpoint} → ${response.status} (${duration}ms)`)
     return data
   } catch (error) {
-    console.error('❌ Error in getActiveAlerts:', error)
-    console.warn('⚠️ Falling back to mock data')
-    return mockActiveAlerts
+    logger.error('API', `✗ ${method} ${endpoint} failed`, { error })
+    throw error
   }
 }
 
+async function uploadFile(endpoint: string, file: File, additionalData?: Record<string, any>) {
+  const url = `${API_BASE}${endpoint}`
+  const formData = new FormData()
+
+  formData.append('file', file)
+
+  if (additionalData) {
+    Object.entries(additionalData).forEach(([key, value]) => {
+      formData.append(key, String(value))
+    })
+  }
+
+  try {
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(2)
+    logger.info('API', `→ POST ${endpoint} (uploading ${file.name}, ${fileSizeMB}MB)`)
+
+    const startTime = Date.now()
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const duration = Date.now() - startTime
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorMsg = errorData.detail || `API error: ${response.status}`
+      logger.error('API', `← POST ${endpoint} → ${response.status} (${duration}ms)`, {
+        status: response.status,
+        error: errorMsg,
+        fileName: file.name,
+      })
+      throw new Error(errorMsg)
+    }
+
+    const data = await response.json()
+    logger.info('API', `← POST ${endpoint} → ${response.status} (${duration}ms, ${file.name} processed)`)
+    return data
+  } catch (error) {
+    logger.error('API', `✗ POST ${endpoint} failed`, { error, fileName: file.name })
+    throw error
+  }
+}
+
+// ============================================
+// API Functions
+// ============================================
+
+/**
+ * Get dashboard summary statistics
+ */
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  try {
+    const data = await fetchFromBackend('/alerts/summary')
+    return data
+  } catch (error) {
+    console.error('Error fetching dashboard summary:', error)
+    // Return default values on error
+    return {
+      total_active_alerts: 0,
+      critical_alerts: 0,
+      pending_cases: 0,
+      avg_resolution_time: 0,
+      resolution_time_change: 0,
+      alerts_by_risk: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+      },
+    }
+  }
+}
+
+/**
+ * Get list of active alerts
+ */
+export async function getActiveAlerts(): Promise<Alert[]> {
+  try {
+    const data = await fetchFromBackend('/alerts/?status=active&limit=100')
+    return data.alerts || []
+  } catch (error) {
+    console.error('Error fetching active alerts:', error)
+    return []
+  }
+}
+
+/**
+ * Get transaction volume data
+ */
 export async function getTransactionVolume(): Promise<TransactionVolume[]> {
-  // Mock data for now - TODO: Calculate from transactions table
+  // TODO: Implement backend endpoint
+  // For now, return mock data
   return [
     { month: "Apr", volume: 1200 },
     { month: "May", volume: 1450 },
@@ -174,28 +338,12 @@ export async function getTransactionVolume(): Promise<TransactionVolume[]> {
   ]
 }
 
+/**
+ * Get detailed information about a specific alert
+ */
 export async function getAlertDetails(alertId: string): Promise<AlertDetails> {
   try {
-    console.log('🔄 Fetching alert details for', alertId, 'from Supabase...')
-    
-    const { data, error } = await supabase
-      .from('alerts')
-      .select('*')
-      .eq('alert_id', alertId)
-      .single()
-
-    if (error) {
-      console.error('❌ Supabase error:', error)
-      console.warn('⚠️ Falling back to mock data')
-      return mockAlertDetails
-    }
-
-    if (!data) {
-      console.warn('⚠️ Alert not found in Supabase, using mock data')
-      return mockAlertDetails
-    }
-
-    console.log('✅ Successfully fetched alert details from Supabase')
+    const data = await fetchFromBackend(`/alerts/${alertId}`)
     return {
       ...data,
       agent_findings: data.agent_findings || [],
@@ -203,48 +351,109 @@ export async function getAlertDetails(alertId: string): Promise<AlertDetails> {
       transaction_history: data.transaction_history || [],
     }
   } catch (error) {
-    console.error('❌ Error in getAlertDetails:', error)
-    console.warn('⚠️ Falling back to mock data')
-    return mockAlertDetails
-  }
-}
-
-export async function remediateAlert(alertId: string): Promise<{ success: boolean }> {
-  try {
-    const { error } = await supabase
-      .from('alerts')
-      .update({ 
-        status: 'resolved', 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('alert_id', alertId)
-
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
-    }
-
-    return { success: true }
-  } catch (error) {
-    console.error('Error in remediateAlert:', error)
+    console.error(`Error fetching alert details for ${alertId}:`, error)
     throw error
   }
 }
 
+/**
+ * Mark an alert as remediated
+ */
+export async function remediateAlert(alertId: string): Promise<{ success: boolean }> {
+  try {
+    await fetchFromBackend(`/alerts/${alertId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'resolved' }),
+    })
+    return { success: true }
+  } catch (error) {
+    console.error(`Error remediating alert ${alertId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Update alert status
+ */
+export async function updateAlertStatus(
+  alertId: string,
+  status: 'pending' | 'investigating' | 'resolved'
+): Promise<{ success: boolean }> {
+  try {
+    await fetchFromBackend(`/alerts/${alertId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    })
+    return { success: true }
+  } catch (error) {
+    console.error(`Error updating alert status for ${alertId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * Get audit trail for an alert
+ */
 export async function getAuditTrail(alertId: string): Promise<AuditLogEntry[]> {
-  // Mock data for now
-  return [
-    {
-      timestamp: "2025-10-30T09:15:00Z",
-      user: "Ana Rodriguez",
-      action: "Alert Created",
-      details: "Alert automatically generated by Transaction Monitor Agent",
-    },
-    {
-      timestamp: "2025-10-30T09:20:00Z",
-      user: "Ana Rodriguez",
-      action: "Alert Viewed",
-      details: "Compliance officer viewed alert details",
-    },
-  ]
+  try {
+    const data = await fetchFromBackend(`/alerts/${alertId}/audit-trail`)
+    return data.audit_logs || []
+  } catch (error) {
+    console.error(`Error fetching audit trail for ${alertId}:`, error)
+    // Return empty array on error
+    return []
+  }
+}
+
+/**
+ * Upload and analyze a document
+ */
+export async function analyzeDocument(file: File, clientId?: string): Promise<CorroborationResponse> {
+  try {
+    const additionalData = clientId ? { client_id: clientId } : {}
+    const data = await uploadFile('/corroboration/analyze', file, additionalData)
+    return data
+  } catch (error) {
+    console.error('Error analyzing document:', error)
+    throw error
+  }
+}
+
+/**
+ * Perform OCR on an image
+ */
+export async function performOCR(file: File): Promise<any> {
+  try {
+    const data = await uploadFile('/ocr/extract', file)
+    return data
+  } catch (error) {
+    console.error('Error performing OCR:', error)
+    throw error
+  }
+}
+
+/**
+ * Parse a document (PDF, DOCX, etc.)
+ */
+export async function parseDocument(file: File): Promise<any> {
+  try {
+    const data = await uploadFile('/documents/parse', file)
+    return data
+  } catch (error) {
+    console.error('Error parsing document:', error)
+    throw error
+  }
+}
+
+/**
+ * Check backend health
+ */
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/health`)
+    return response.ok
+  } catch (error) {
+    console.error('Backend health check failed:', error)
+    return false
+  }
 }

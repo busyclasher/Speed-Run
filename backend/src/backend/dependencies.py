@@ -132,7 +132,7 @@ async def get_current_user(
     """
     # TODO: Implement actual authentication
     # For now, return a mock user for development
-    logger.warning("using_mock_authentication", msg="Implement real auth before production")
+    logger.warning("using_mock_authentication", note="Implement real auth before production")
 
     return {
         "user_id": "00000000-0000-0000-0000-000000000000",

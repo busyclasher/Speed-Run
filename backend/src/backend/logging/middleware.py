@@ -1,107 +1,101 @@
-"""
-FastAPI middleware for request/response logging.
-"""
+"""Logging middleware for FastAPI."""
 
 import time
+import uuid
 from typing import Callable
-from uuid import uuid4
-
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
-import structlog
+from backend.logging import get_logger, set_request_id, clear_request_id
 
-from .context import set_correlation_id, set_request_id, clear_context
-
-logger = structlog.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware for logging all HTTP requests and responses.
+    """Middleware to log all HTTP requests and responses."""
 
-    Adds correlation IDs and logs request/response details.
-    """
+    def __init__(self, app: ASGIApp):
+        super().__init__(app)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
-        Process request and log details.
+        Process each HTTP request and log details.
 
         Args:
-            request: HTTP request
-            call_next: Next middleware/handler
+            request: Incoming HTTP request
+            call_next: Next middleware/handler in chain
 
         Returns:
             HTTP response
         """
-        # Generate or extract correlation ID
-        correlation_id = request.headers.get("X-Correlation-ID", str(uuid4()))
-        request_id = str(uuid4())
-
-        # Set context
-        set_correlation_id(correlation_id)
+        # Generate unique request ID
+        request_id = str(uuid.uuid4())
         set_request_id(request_id)
 
-        # Extract user info if available (from auth headers)
-        # user_id = request.headers.get("X-User-ID")
-        # if user_id:
-        #     set_user_id(user_id)
-
-        # Log request
+        # Get client info
+        client_host = request.client.host if request.client else "unknown"
+        
+        # Log request start
         start_time = time.time()
-
         logger.info(
-            "request_started",
-            method=request.method,
-            url=str(request.url),
-            path=request.url.path,
-            query_params=dict(request.query_params),
-            client_host=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
+            f"→ {request.method} {request.url.path}",
+            extra={
+                "extra_data": {
+                    "method": request.method,
+                    "path": request.url.path,
+                    "query_params": dict(request.query_params),
+                    "client_host": client_host,
+                    "user_agent": request.headers.get("user-agent", "unknown"),
+                }
+            }
         )
 
         # Process request
         try:
             response = await call_next(request)
-
-            # Calculate duration
-            duration_ms = (time.time() - start_time) * 1000
-
+            
+            # Calculate processing time
+            process_time = time.time() - start_time
+            
             # Log response
             logger.info(
-                "request_completed",
-                method=request.method,
-                url=str(request.url),
-                path=request.url.path,
-                status_code=response.status_code,
-                duration_ms=round(duration_ms, 2),
+                f"← {request.method} {request.url.path} → {response.status_code} ({process_time:.3f}s)",
+                extra={
+                    "extra_data": {
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status_code": response.status_code,
+                        "process_time": process_time,
+                    }
+                }
             )
 
-            # Add correlation ID to response headers
-            response.headers["X-Correlation-ID"] = correlation_id
+            # Add request ID to response headers
             response.headers["X-Request-ID"] = request_id
 
             return response
 
         except Exception as e:
+            # Calculate processing time
+            process_time = time.time() - start_time
+
             # Log error
-            duration_ms = (time.time() - start_time) * 1000
-
             logger.error(
-                "request_failed",
-                method=request.method,
-                url=str(request.url),
-                path=request.url.path,
-                error=str(e),
-                error_type=type(e).__name__,
-                duration_ms=round(duration_ms, 2),
+                f"✗ {request.method} {request.url.path} → ERROR ({process_time:.3f}s): {str(e)}",
+                exc_info=True,
+                extra={
+                    "extra_data": {
+                        "method": request.method,
+                        "path": request.url.path,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                        "process_time": process_time,
+                    }
+                }
             )
-
             raise
 
         finally:
-            # Clear context
-            clear_context()
-
-
-__all__ = ["LoggingMiddleware"]
+            # Clear request ID from context
+            clear_request_id()

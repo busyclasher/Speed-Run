@@ -1,6 +1,6 @@
 """Risk scoring engine for document corroboration."""
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from backend.schemas.validation import (
     RiskScore,
     ValidationSeverity,
@@ -9,6 +9,10 @@ from backend.schemas.validation import (
     ContentValidationResult,
     ImageAnalysisResult,
 )
+from backend.logging import get_logger
+from backend.config import settings
+
+logger = get_logger(__name__)
 
 
 class RiskScorer:
@@ -30,17 +34,153 @@ class RiskScorer:
         ValidationSeverity.CRITICAL: 100,
     }
 
-    # Risk level thresholds
-    RISK_THRESHOLDS = {
-        "low": 25,
-        "medium": 50,
-        "high": 75,
-        # critical: > 75
-    }
-
     def __init__(self):
-        """Initialize the risk scorer."""
-        pass
+        """Initialize the risk scorer with configuration from settings."""
+        # Risk level thresholds (loaded from config)
+        self.RISK_THRESHOLDS = {
+            "low": settings.RISK_THRESHOLD_LOW,
+            "medium": settings.RISK_THRESHOLD_MEDIUM,
+            "high": settings.RISK_THRESHOLD_HIGH,
+            # critical: > high
+        }
+
+        # Risk score normalization thresholds for social media compression (loaded from config)
+        self.NORMALIZATION_REDUCTION = {
+            "low": settings.RISK_NORMALIZATION_REDUCTION_LOW,
+            "medium": settings.RISK_NORMALIZATION_REDUCTION_MEDIUM,
+            "high": settings.RISK_NORMALIZATION_REDUCTION_HIGH,
+        }
+
+        logger.info(
+            "✨ Risk scorer initialized",
+            thresholds=self.RISK_THRESHOLDS,
+            normalization=self.NORMALIZATION_REDUCTION,
+        )
+
+    async def apply_compression_normalization(
+        self,
+        risk_score: float,
+        compression_profiles: List[Any],
+        forensic_findings: List[Any],
+        ela_variance: Optional[float] = None,
+    ) -> Tuple[float, str]:
+        """
+        Normalize risk score based on compression profile.
+
+        This method reduces false positives caused by social media compression
+        artifacts that look like tampering but are actually benign compression.
+
+        Logic:
+        1. Check if image was compressed by social media platforms
+        2. Check if there are REAL tampering indicators (not compression-related)
+        3. If social media + no real tampering → reduce score by 40-65%
+        4. If real tampering indicators present → NO normalization
+        5. Return adjusted score + explanation
+
+        Args:
+            risk_score: Original risk score (0-100)
+            compression_profiles: List of detected compression profiles
+            forensic_findings: List of forensic findings (ValidationIssue objects)
+            ela_variance: ELA variance for determining reduction amount
+
+        Returns:
+            Tuple of (normalized_score, explanation_message)
+        """
+        # No normalization if no compression profiles detected
+        if not compression_profiles:
+            logger.debug("📊 No compression profiles detected, skipping normalization")
+            return risk_score, "No normalization applied (no compression profiles)"
+
+        # Check if any profile is social media
+        social_media_profiles = {'whatsapp_low', 'instagram', 'facebook', 'twitter'}
+        is_social_media = False
+        detected_profile = None
+
+        for profile in compression_profiles:
+            # Handle both dict and object formats
+            profile_name = profile.get('profile') if isinstance(profile, dict) else getattr(profile, 'profile', None)
+            if profile_name in social_media_profiles:
+                is_social_media = True
+                detected_profile = profile
+                break
+
+        if not is_social_media:
+            logger.debug("📊 No social media compression detected, skipping normalization")
+            return risk_score, "No normalization applied (not social media compressed)"
+
+        # Check for REAL tampering indicators (not compression-related)
+        real_tampering_keywords = [
+            'CLONE', 'CLONING', 'DUPLICATE', 'DUPLICATED',
+            'RESAMPLING', 'RESAMPLE',
+            'MEDIAN_FILTER', 'MEDIAN FILTER', 'SMOOTHING',
+            'COLOR_CORRELATION', 'COLOR CORRELATION',
+            'EDGE_CONSISTENCY', 'EDGE INCONSISTENCY',
+        ]
+
+        has_real_tampering = False
+        for finding in forensic_findings:
+            # Handle both dict and object formats
+            description = finding.get('description') if isinstance(finding, dict) else getattr(finding, 'description', '')
+            description_upper = description.upper()
+
+            # Check if this is a real tampering indicator
+            if any(keyword in description_upper for keyword in real_tampering_keywords):
+                has_real_tampering = True
+                logger.info(f"🚨 Real tampering detected: {description}")
+                break
+
+        # If real tampering detected, DO NOT normalize
+        if has_real_tampering:
+            logger.info(
+                f"⚠️  Real tampering indicators present - normalization skipped "
+                f"(score remains {risk_score:.2f})"
+            )
+            return risk_score, "No normalization applied (real tampering detected)"
+
+        # Apply normalization based on ELA variance
+        if ela_variance is None:
+            reduction_factor = self.NORMALIZATION_REDUCTION["medium"]
+            reduction_reason = "medium compression"
+        elif ela_variance < 100:
+            # Very low ELA = heavy compression (WhatsApp, etc.)
+            reduction_factor = self.NORMALIZATION_REDUCTION["low"]
+            reduction_reason = "heavy social media compression"
+        elif ela_variance < 200:
+            # Medium ELA
+            reduction_factor = self.NORMALIZATION_REDUCTION["medium"]
+            reduction_reason = "moderate social media compression"
+        else:
+            # High ELA
+            reduction_factor = self.NORMALIZATION_REDUCTION["high"]
+            reduction_reason = "light social media compression"
+
+        # Calculate normalized score
+        normalized_score = risk_score * reduction_factor
+        reduction_percent = int((1 - reduction_factor) * 100)
+
+        # Get profile name for logging
+        profile_name = (
+            detected_profile.get('profile') if isinstance(detected_profile, dict)
+            else getattr(detected_profile, 'profile', 'unknown')
+        )
+        profile_message = (
+            detected_profile.get('message') if isinstance(detected_profile, dict)
+            else getattr(detected_profile, 'message', 'Social media compression')
+        )
+
+        explanation = (
+            f"Risk score reduced by {reduction_percent}% due to {profile_message} "
+            f"({reduction_reason}, ELA={ela_variance:.1f})" if ela_variance
+            else f"Risk score reduced by {reduction_percent}% due to {profile_message}"
+        )
+
+        logger.info(
+            f"📉 Risk score normalized: {risk_score:.2f} → {normalized_score:.2f} "
+            f"({reduction_percent}% reduction) | Profile: {profile_name} | "
+            f"ELA variance: {ela_variance}"
+        )
+
+        return normalized_score, explanation
 
     async def calculate_risk_score(
         self,
@@ -93,6 +233,7 @@ class RiskScorer:
             contributing_factors.extend(content_factors)
 
         # 4. Image Analysis Score
+        normalization_message = None
         if image_analysis:
             image_score, image_confidence, image_factors = self._score_image_analysis(
                 image_analysis
@@ -100,6 +241,30 @@ class RiskScorer:
             total_score += image_score * self.WEIGHTS["image_analysis"]
             confidence_factors.append(image_confidence)
             contributing_factors.extend(image_factors)
+
+            # Apply compression normalization if profiles detected
+            if image_analysis.compression_profiles:
+                original_score = total_score
+                total_score, normalization_message = await self.apply_compression_normalization(
+                    risk_score=total_score,
+                    compression_profiles=image_analysis.compression_profiles,
+                    forensic_findings=image_analysis.forensic_findings,
+                    ela_variance=image_analysis.ela_variance,
+                )
+
+                # Add normalization to contributing factors if applied
+                if total_score != original_score:
+                    contributing_factors.append({
+                        "component": "risk_normalization",
+                        "factor": normalization_message,
+                        "severity": "info",
+                        "impact": original_score - total_score,
+                        "details": {
+                            "original_score": round(original_score, 2),
+                            "normalized_score": round(total_score, 2),
+                            "reduction": round(original_score - total_score, 2),
+                        }
+                    })
 
         # Calculate overall confidence
         overall_confidence = sum(confidence_factors) / len(confidence_factors) if confidence_factors else 0.5
@@ -114,6 +279,7 @@ class RiskScorer:
             structure_validation,
             content_validation,
             image_analysis,
+            normalization_message=normalization_message,
         )
 
         return RiskScore(
@@ -401,9 +567,14 @@ class RiskScorer:
         structure_validation: Optional[StructureValidationResult],
         content_validation: Optional[ContentValidationResult],
         image_analysis: Optional[ImageAnalysisResult],
+        normalization_message: Optional[str] = None,
     ) -> List[str]:
         """Generate recommendations based on findings."""
         recommendations: List[str] = []
+
+        # Add normalization note if applicable
+        if normalization_message and "reduced" in normalization_message.lower():
+            recommendations.append(f"ℹ️  Note: {normalization_message}")
 
         # Overall recommendations
         if score > 75:

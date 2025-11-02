@@ -12,12 +12,14 @@ from backend.config import settings
 # Import infrastructure components
 from backend.database import init_db, close_db
 from backend.cache import init_cache, close_cache
-from backend.logging import configure_logging, LoggingMiddleware, get_logger
+from backend.logging import setup_logging, get_logger
+from backend.logging.middleware import LoggingMiddleware
 
 # Configure logging before any other imports
-configure_logging(
-    level=getattr(settings, "LOG_LEVEL", "INFO"),
-    json_output=not settings.TESTING,  # Console output for testing
+setup_logging(
+    log_level=settings.LOG_LEVEL,
+    log_file=settings.LOG_FILE,
+    enable_json_logs=not settings.TESTING,  # Colored logs for testing/development
 )
 
 logger = get_logger(__name__)
@@ -27,54 +29,50 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup
-    logger.info("application_starting", version=settings.VERSION)
+    logger.info(f"🚀 Application starting (version: {settings.VERSION})")
 
     # Initialize database connection pool
-    logger.info("database_initializing")
+    logger.info("📊 Initializing database connection pool...")
     try:
         await init_db()
-        logger.info("database_connected")
+        logger.info("✅ Database connected successfully")
     except Exception as e:
         logger.warning(
-            "database_connection_failed",
-            error=str(e),
-            fallback="continuing_without_database",
+            f"⚠️  Database connection failed: {str(e)} - Continuing without database"
         )
 
     # Initialize cache (Redis or in-memory fallback)
-    logger.info("cache_initializing")
+    logger.info("🗄️  Initializing cache system...")
     try:
         await init_cache()
-        logger.info("cache_connected")
+        logger.info("✅ Cache connected successfully")
     except Exception as e:
         logger.warning(
-            "cache_initialization_failed",
-            error=str(e),
-            fallback="continuing_without_cache",
+            f"⚠️  Cache initialization failed: {str(e)} - Continuing without cache"
         )
 
-    logger.info("application_ready", version=settings.VERSION)
+    logger.info(f"✨ Application ready to serve requests (version: {settings.VERSION})")
 
     yield
 
     # Shutdown
-    logger.info("application_shutting_down")
+    logger.info("🛑 Application shutting down...")
 
     # Close cache connections
     try:
         await close_cache()
-        logger.info("cache_closed")
+        logger.info("✅ Cache connections closed")
     except Exception as e:
-        logger.error("cache_close_error", error=str(e))
+        logger.error(f"❌ Error closing cache: {str(e)}")
 
     # Close database connections
     try:
         await close_db()
-        logger.info("database_closed")
+        logger.info("✅ Database connections closed")
     except Exception as e:
-        logger.error("database_close_error", error=str(e))
+        logger.error(f"❌ Error closing database: {str(e)}")
 
-    logger.info("application_shutdown_complete")
+    logger.info("👋 Application shutdown complete")
 
 
 app = FastAPI(

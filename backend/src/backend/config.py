@@ -70,6 +70,33 @@ class Settings(BaseSettings):
     RISK_THRESHOLD_MEDIUM: float = 50.0
     RISK_THRESHOLD_HIGH: float = 75.0
 
+    # Tampering Detection - ELA Thresholds
+    TAMPERING_ELA_ANOMALY_THRESHOLD: float = 0.15
+    TAMPERING_ELA_VERY_LOW: float = 15.0
+    TAMPERING_ELA_LOW: float = 40.0
+    TAMPERING_ELA_HIGH: float = 600.0
+    TAMPERING_ELA_VERY_HIGH: float = 1000.0
+
+    # Tampering Detection - Advanced Forensic Thresholds
+    TAMPERING_NOISE_RATIO_MAX: float = 3.0
+    TAMPERING_EDGE_CONSISTENCY_DIFF: int = 20
+    TAMPERING_RESAMPLING_FFT_PEAK_RATIO: float = 8.0
+    TAMPERING_COLOR_CORR_LOW: float = 0.85
+    TAMPERING_MEDIAN_FILTER_THRESHOLD: float = 1.0
+
+    # Tampering Detection - Clone Detection Thresholds
+    TAMPERING_CLONE_REGION_SIZE: int = 32
+    TAMPERING_CLONE_DUPLICATE_RATIO_THRESHOLD: float = 0.05
+    TAMPERING_CLONE_DISTANCE_MIN_BLOCKS: int = 2
+
+    # Tampering Detection - Compression Thresholds
+    TAMPERING_COMPRESSION_VARIANCE_THRESHOLD: float = 1000.0
+
+    # Risk Score Normalization (for social media compression)
+    RISK_NORMALIZATION_REDUCTION_LOW: float = 0.4
+    RISK_NORMALIZATION_REDUCTION_MEDIUM: float = 0.5
+    RISK_NORMALIZATION_REDUCTION_HIGH: float = 0.65
+
     class Config:
         env_file = ".env"
         case_sensitive = True

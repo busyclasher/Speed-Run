@@ -215,7 +215,7 @@ def cache_by_file_hash(
                 logger.warning(
                     "cache_by_file_hash_no_path",
                     function=func.__name__,
-                    msg="File path not found, executing without cache",
+                    reason="File path not found, executing without cache",
                 )
                 return await func(*args, **kwargs)
 
